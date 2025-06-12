@@ -3,6 +3,8 @@
 
 #include "Items/Weapons/WarriorWeaponBase.h"
 #include "Components/BoxComponent.h"
+#include "WarriorFunctionLibrary.h"
+
 #include "WarriorDebugHelper.h"
 
 // Sets default values
@@ -27,16 +29,28 @@ void AWarriorWeaponBase::OnCollisionBoxBeginOverlap(UPrimitiveComponent* Overlap
 	APawn* WeaponOwningPawn = GetInstigator<APawn>();
 
 	checkf(WeaponOwningPawn, TEXT("Forgot to assign an instigator as the owning pawn for the weapon: %s"), *GetName());
-
-	if (APawn* HitPawn = Cast<APawn>(OtherActor))
+	
+	
+	if(APawn* HitPawn = Cast<APawn>(OtherActor))
 	{
-		if (WeaponOwningPawn != HitPawn)
+		if (UWarriorFunctionLibrary::IsTargetPawnHostile(WeaponOwningPawn, HitPawn))
 		{
+			// 델리게이트 호출
 			OnWeaponHitTarget.ExecuteIfBound(OtherActor);
 		}
-
-		// TODO: 적 캐릭터 히트 체크 구현
 	}
+
+	//if (APawn* HitPawn = Cast<APawn>(OtherActor))
+	//{
+
+	//	// 이렇게 처리하면 같은 적끼리 공격을 할수도 있음
+	//	if (WeaponOwningPawn != HitPawn)
+	//	{
+	//		OnWeaponHitTarget.ExecuteIfBound(OtherActor);
+	//	}
+
+	//	// TODO: 적 캐릭터 히트 체크 구현
+	//}
 }
 
 void AWarriorWeaponBase::OnCollisionBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -46,12 +60,11 @@ void AWarriorWeaponBase::OnCollisionBoxEndOverlap(UPrimitiveComponent* Overlappe
 
 	if (APawn* HitPawn = Cast<APawn>(OtherActor))
 	{
-		if (WeaponOwningPawn != HitPawn)
+		if (UWarriorFunctionLibrary::IsTargetPawnHostile(WeaponOwningPawn, HitPawn))
 		{
+			// 델리게이트 호출
 			OnWeaponPulledFromTarget.ExecuteIfBound(OtherActor);
 		}
-
-		// TODO: 적 캐릭터 히트 체크 구현
 	}
 }
 

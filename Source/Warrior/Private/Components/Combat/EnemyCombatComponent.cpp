@@ -4,8 +4,10 @@
 #include "Components/Combat/EnemyCombatComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "WarriorGameplayTags.h"
+#include "WarriorFunctionLibrary.h"
 
 #include "WarriorDebugHelper.h"
+
 
 void UEnemyCombatComponent::OnHitTargetActor(AActor* HitActor)
 {
@@ -21,12 +23,13 @@ void UEnemyCombatComponent::OnHitTargetActor(AActor* HitActor)
 	// 막고 있거나 가드불가인지 등의 옵션을 체크해야함
 	bool bIsValidBlock = false;
 
-	const bool bIsPlayerBlocking = false;
+	const bool bIsPlayerBlocking = UWarriorFunctionLibrary::NativeDoesActorHaveTag(HitActor, WarriorGameplayTags::Player_Status_Blocking);
 	const bool bIsMyAttackUnblockable = false;
 
+	// block이 valid 하려면 적과 히어로의 forward 벡터들이 서로 수직하지 않은 범위 내에 있어야함
 	if (bIsPlayerBlocking && !bIsMyAttackUnblockable)
 	{
-		// 블록 가능으로 bool값 변경
+		bIsValidBlock = UWarriorFunctionLibrary::IsValidBlock(GetOwningPawn(), HitActor);
 	}
 
 	FGameplayEventData EventData;
@@ -36,6 +39,11 @@ void UEnemyCombatComponent::OnHitTargetActor(AActor* HitActor)
 	if (bIsValidBlock)
 	{
 		// 블록하도록 설정
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(
+			HitActor,
+			WarriorGameplayTags::Player_Event_SuccessfulBlock,
+			EventData
+		);
 	}
 	else
 	{

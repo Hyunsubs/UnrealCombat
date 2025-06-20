@@ -5,6 +5,8 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "WarriorGameplayTags.h"
 #include "WarriorFunctionLibrary.h"
+#include "Characters/WarriorEnemyCharacter.h"
+#include "Components/BoxComponent.h"
 
 #include "WarriorDebugHelper.h"
 
@@ -24,7 +26,7 @@ void UEnemyCombatComponent::OnHitTargetActor(AActor* HitActor)
 	bool bIsValidBlock = false;
 
 	const bool bIsPlayerBlocking = UWarriorFunctionLibrary::NativeDoesActorHaveTag(HitActor, WarriorGameplayTags::Player_Status_Blocking);
-	const bool bIsMyAttackUnblockable = false;
+	const bool bIsMyAttackUnblockable = UWarriorFunctionLibrary::NativeDoesActorHaveTag(GetOwningPawn(), WarriorGameplayTags::Enemy_Status_Unblockable);
 
 	// block이 valid 하려면 적과 히어로의 forward 벡터들이 서로 수직하지 않은 범위 내에 있어야함
 	if (bIsPlayerBlocking && !bIsMyAttackUnblockable)
@@ -53,5 +55,32 @@ void UEnemyCombatComponent::OnHitTargetActor(AActor* HitActor)
 			WarriorGameplayTags::Shared_Event_MeleeHit,
 			EventData
 		);
+	}
+}
+
+void UEnemyCombatComponent::ToggleBodyCollisionBoxCollision(bool bShouldEnable, EToggleDamageType ToggleDamageType)
+{
+	AWarriorEnemyCharacter* OwningEnemyCharacter = GetOwningPawn<AWarriorEnemyCharacter>();
+
+	check(OwningEnemyCharacter);
+
+	UBoxComponent* LeftHandCollisionBox = OwningEnemyCharacter->GetLeftHandCollisionBox();
+	UBoxComponent* RightHandCollisionBox = OwningEnemyCharacter->GetRightHandCollisionBox();
+
+	check(LeftHandCollisionBox && RightHandCollisionBox);
+
+	switch (ToggleDamageType)
+	{
+	case EToggleDamageType::LeftHand:
+		LeftHandCollisionBox->SetCollisionEnabled(bShouldEnable ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+		break;
+	case EToggleDamageType::RightHand:
+		RightHandCollisionBox->SetCollisionEnabled(bShouldEnable ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+		break;
+	}
+
+	if (!bShouldEnable)
+	{
+		OverlappedActors.Empty();
 	}
 }
